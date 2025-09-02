@@ -1,9 +1,12 @@
 """Config flow for Soil Temperature integration."""
+import logging
 import voluptuous as vol
+import aiohttp
 
 from homeassistant.core import callback
 from homeassistant import config_entries
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_SCAN_INTERVAL
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
     DOMAIN,
@@ -12,7 +15,10 @@ from .const import (
     UNIT_SYSTEM_IMPERIAL,
     UNIT_SYSTEM_METRIC,
     DEFAULT_UNIT_SYSTEM,
+    GEOCODE_API_ENDPOINT,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class SoilTemperatureConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -34,10 +40,30 @@ class SoilTemperatureConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             await self.async_set_unique_id(f"{user_input[CONF_LATITUDE]}-{user_input[CONF_LONGITUDE]}")
             self._abort_if_unique_id_configured()
 
-            return self.async_create_entry(
-                title=f"Soil Temperature ({user_input[CONF_LATITUDE]}, {user_input[CONF_LONGITUDE]})",
-                data=user_input
-            )
+            lat = user_input[CONF_LATITUDE]
+            lng = user_input[CONF_LONGITUDE]
+            
+            # Set a default title in case the geocode API fails
+            title = f"Soil Temperature ({lat}, {lng})"
+
+            try:
+                session = async_get_clientsession(self.hass)
+                url = GEOCODE_API_ENDPOINT.format(lat=lat, lng=lng)
+                async with session.get(url) as response:
+                    response.raise_for_status()
+                    geo_data = await response.json(content_type=None)
+                    
+                    if city := geo_data.get("city"):
+                        title = f"Soil Temperature ({city})"
+                    else:
+                        _LOGGER.warning("Geocode response did not contain a city: %s", geo_data)
+
+            except aiohttp.ClientError as err:
+                _LOGGER.warning("Failed to connect to geocode API, using coordinates as title: %s", err)
+            except Exception as err:
+                _LOGGER.error("An unexpected error occurred during geocoding: %s", err)
+
+            return self.async_create_entry(title=title, data=user_input)
 
         default_latitude = self.hass.config.latitude
         default_longitude = self.hass.config.longitude
