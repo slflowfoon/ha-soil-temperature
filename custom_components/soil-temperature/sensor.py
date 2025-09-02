@@ -96,7 +96,8 @@ class SoilTemperatureBaseSensor(CoordinatorEntity[SoilTemperatureDataUpdateCoord
                 else SENSOR_UNIT_TEMPERATURE_IMPERIAL
             )
         else:
-            self._attr_device_class = SensorDeviceClass.MOISTURE
+            # Moisture is not a percentage, so we don't set a device class
+            self._attr_device_class = None
             self._attr_native_unit_of_measurement = SENSOR_UNIT_MOISTURE
 
     def _process_value(self, value: float | None) -> float | None:
@@ -109,8 +110,8 @@ class SoilTemperatureBaseSensor(CoordinatorEntity[SoilTemperatureDataUpdateCoord
                 return round(fahrenheit_to_celsius(value), 2)
             return round(value, 2)
         else:
-            # Convert moisture fraction to percentage
-            return round(value * 100, 2)
+            # Return the volumetric moisture content directly, rounded to 3 decimal places
+            return round(value, 3)
 
 
 class SoilTemperatureCurrentSensor(SoilTemperatureBaseSensor):
