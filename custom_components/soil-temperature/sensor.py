@@ -1,4 +1,3 @@
-"""Sensor platform for the Soil Temperature integration."""
 from __future__ import annotations
 from typing import Callable
 
@@ -30,7 +29,6 @@ from .coordinator import SoilTemperatureDataUpdateCoordinator
 
 
 def fahrenheit_to_celsius(fahrenheit: float) -> float:
-    """Convert Fahrenheit to Celsius."""
     return (fahrenheit - 32) * 5 / 9
 
 
@@ -39,19 +37,16 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the sensor platform."""
     coordinator: SoilTemperatureDataUpdateCoordinator = hass.data[DOMAIN][config_entry.entry_id]
     
     entities: list[SensorEntity] = []
     unit_system = config_entry.data.get(CONF_UNIT_SYSTEM)
 
-    # Create Current Sensors
     for key in SOIL_TEMPERATURE_KEYS:
         entities.append(SoilTemperatureCurrentSensor(coordinator, key, SENSOR_TEMPERATURE_NAME, unit_system))
     for key in SOIL_MOISTURE_KEYS:
         entities.append(SoilTemperatureCurrentSensor(coordinator, key, SENSOR_MOISTURE_NAME, unit_system))
 
-    # Create Summary Sensors
     for summary_type in SUMMARY_TYPES:
         for key in SOIL_TEMPERATURE_KEYS:
             entities.append(SoilTemperatureSummarySensor(coordinator, key, summary_type, SENSOR_TEMPERATURE_NAME, unit_system))
@@ -62,7 +57,6 @@ async def async_setup_entry(
 
 
 class SoilTemperatureBaseSensor(CoordinatorEntity[SoilTemperatureDataUpdateCoordinator], SensorEntity):
-    """Base class for a Soil Temperature sensor."""
 
     _attr_has_entity_name = True
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -74,7 +68,6 @@ class SoilTemperatureBaseSensor(CoordinatorEntity[SoilTemperatureDataUpdateCoord
         sensor_type: str,
         unit_system: str,
     ) -> None:
-        """Initialize the sensor."""
         super().__init__(coordinator)
         self._data_key = data_key
         self._unit_system = unit_system
@@ -87,7 +80,6 @@ class SoilTemperatureBaseSensor(CoordinatorEntity[SoilTemperatureDataUpdateCoord
             entry_type="service",
         )
         
-        # Set device class and units
         if self._is_temp:
             self._attr_device_class = SensorDeviceClass.TEMPERATURE
             self._attr_native_unit_of_measurement = (
@@ -96,12 +88,10 @@ class SoilTemperatureBaseSensor(CoordinatorEntity[SoilTemperatureDataUpdateCoord
                 else SENSOR_UNIT_TEMPERATURE_IMPERIAL
             )
         else:
-            # Moisture is not a percentage, so we don't set a device class
             self._attr_device_class = None
             self._attr_native_unit_of_measurement = SENSOR_UNIT_MOISTURE
 
     def _process_value(self, value: float | None) -> float | None:
-        """Process the raw value for the sensor."""
         if value is None:
             return None
         
@@ -110,12 +100,10 @@ class SoilTemperatureBaseSensor(CoordinatorEntity[SoilTemperatureDataUpdateCoord
                 return round(fahrenheit_to_celsius(value), 2)
             return round(value, 2)
         else:
-            # Return the volumetric moisture content directly, rounded to 3 decimal places
             return round(value, 3)
 
 
 class SoilTemperatureCurrentSensor(SoilTemperatureBaseSensor):
-    """Representation of a current soil condition sensor."""
 
     def __init__(
         self,
@@ -124,7 +112,6 @@ class SoilTemperatureCurrentSensor(SoilTemperatureBaseSensor):
         sensor_type: str,
         unit_system: str,
     ) -> None:
-        """Initialize the sensor."""
         super().__init__(coordinator, data_key, sensor_type, unit_system)
         
         self._attr_unique_id = f"{coordinator.entry.entry_id}_current_{data_key}"
@@ -132,7 +119,6 @@ class SoilTemperatureCurrentSensor(SoilTemperatureBaseSensor):
         
     @property
     def native_value(self) -> float | None:
-        """Return the state of the sensor."""
         if self.coordinator.data and "current" in self.coordinator.data:
             raw_value = self.coordinator.data["current"].get(self._data_key)
             return self._process_value(raw_value)
@@ -140,9 +126,8 @@ class SoilTemperatureCurrentSensor(SoilTemperatureBaseSensor):
 
 
 class SoilTemperatureSummarySensor(SoilTemperatureBaseSensor):
-    """Representation of a daily summary soil condition sensor."""
 
-    _attr_entity_registry_enabled_default = False  # Summaries are disabled by default
+    _attr_entity_registry_enabled_default = False
 
     def __init__(
         self,
@@ -152,7 +137,6 @@ class SoilTemperatureSummarySensor(SoilTemperatureBaseSensor):
         sensor_type: str,
         unit_system: str,
     ) -> None:
-        """Initialize the summary sensor."""
         super().__init__(coordinator, data_key, sensor_type, unit_system)
         self._summary_type = summary_type
 
@@ -161,7 +145,6 @@ class SoilTemperatureSummarySensor(SoilTemperatureBaseSensor):
         
     @property
     def native_value(self) -> float | None:
-        """Return the state of the sensor."""
         if (
             self.coordinator.data
             and "summary" in self.coordinator.data
