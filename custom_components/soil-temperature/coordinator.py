@@ -2,6 +2,7 @@
 import logging
 from datetime import timedelta, date
 import statistics
+import json  # Import the standard json library
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -78,9 +79,18 @@ class SoilTemperatureDataUpdateCoordinator(DataUpdateCoordinator):
             # Use the defined headers to get a proper JSON response
             async with session.get(url, headers=API_HEADERS) as response:
                 response.raise_for_status()
-                # Add content_type=None to ignore the incorrect mimetype from the server
-                data = await response.json(content_type=None)
                 
+                # Read the response as plain text first
+                text_data = await response.text()
+                
+                # Now, parse the text using the standard json library
+                # This completely bypasses the content-type check.
+                try:
+                    data = json.loads(text_data)
+                except json.JSONDecodeError as err:
+                    _LOGGER.error("Failed to decode JSON from response: %s", text_data)
+                    raise UpdateFailed(f"Invalid JSON received from API: {err}")
+
                 if "timeline" not in data or "mostRecentReading" not in data:
                     raise UpdateFailed("Invalid data structure received from API")
 
