@@ -1,8 +1,7 @@
-"""DataUpdateCoordinator for the Soil Temperature integration."""
 import logging
 from datetime import timedelta, date
 import statistics
-import json  # Import the standard json library
+import json
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -20,7 +19,6 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-# Define headers to mimic a browser request, fixing the mimetype error
 API_HEADERS = {
     "accept": "application/json, text/plain, */*",
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
@@ -29,10 +27,8 @@ API_HEADERS = {
 
 
 class SoilTemperatureDataUpdateCoordinator(DataUpdateCoordinator):
-    """A coordinator to fetch data from the Soil Temperature API."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
-        """Initialize the coordinator."""
         self.entry = entry
         scan_interval = self.entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
         
@@ -44,7 +40,6 @@ class SoilTemperatureDataUpdateCoordinator(DataUpdateCoordinator):
         )
 
     def _process_timeline_data(self, timeline: list[dict]) -> dict:
-        """Process timeline data to get today's summary."""
         today = date.today()
         today_data = {key: [] for key in SOIL_TEMPERATURE_KEYS + SOIL_MOISTURE_KEYS}
         
@@ -69,22 +64,17 @@ class SoilTemperatureDataUpdateCoordinator(DataUpdateCoordinator):
         return summary
 
     async def _async_update_data(self) -> dict:
-        """Fetch data from the API."""
         session = async_get_clientsession(self.hass)
         lat = self.entry.data[CONF_LATITUDE]
         lng = self.entry.data[CONF_LONGITUDE]
         url = API_ENDPOINT.format(lat=lat, lng=lng)
 
         try:
-            # Use the defined headers to get a proper JSON response
             async with session.get(url, headers=API_HEADERS) as response:
                 response.raise_for_status()
                 
-                # Read the response as plain text first
                 text_data = await response.text()
                 
-                # Now, parse the text using the standard json library
-                # This completely bypasses the content-type check.
                 try:
                     data = json.loads(text_data)
                 except json.JSONDecodeError as err:
