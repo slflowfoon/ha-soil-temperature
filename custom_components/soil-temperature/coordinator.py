@@ -19,6 +19,13 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# Define headers to mimic a browser request, fixing the mimetype error
+API_HEADERS = {
+    "accept": "application/json, text/plain, */*",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+    "referer": "https://soiltemperature.app/results",
+}
+
 
 class SoilTemperatureDataUpdateCoordinator(DataUpdateCoordinator):
     """A coordinator to fetch data from the Soil Temperature API."""
@@ -68,9 +75,11 @@ class SoilTemperatureDataUpdateCoordinator(DataUpdateCoordinator):
         url = API_ENDPOINT.format(lat=lat, lng=lng)
 
         try:
-            async with session.get(url) as response:
+            # Use the defined headers to get a proper JSON response
+            async with session.get(url, headers=API_HEADERS) as response:
                 response.raise_for_status()
-                data = await response.json()
+                # Add content_type=None to ignore the incorrect mimetype from the server
+                data = await response.json(content_type=None)
                 
                 if "timeline" not in data or "mostRecentReading" not in data:
                     raise UpdateFailed("Invalid data structure received from API")
