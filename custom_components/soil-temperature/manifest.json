@@ -1,0 +1,11 @@
+{
+  "domain": "soil_temperature",
+  "name": "SoilTemperature.app",
+  "config_flow": true,
+  "documentation": "https://github.com/slflowfoon/ha-soil-temperature",
+  "issue_tracker": "https://github.com/slflowfoon/ha-soil-temperature/issues",
+  "codeowners": [],
+  "version": "1.0.0",
+  "iot_class": "cloud_polling",
+  "requirements": []
+}
