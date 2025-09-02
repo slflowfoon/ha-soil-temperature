@@ -15,13 +15,13 @@ DEFAULT_SCAN_INTERVAL = 60  # minutes
 
 # API
 API_ENDPOINT = "https://soiltemperature.app/api/weatherTimeline?lat={lat}&lng={lng}"
+GEOCODE_API_ENDPOINT = "https://soiltemperature.app/api/geocodeReverse?lat={lat}&lng={lng}"
 
 # Sensor Information
 SENSOR_TEMPERATURE_NAME = "Soil Temperature"
 SENSOR_MOISTURE_NAME = "Soil Moisture"
 SENSOR_UNIT_TEMPERATURE_IMPERIAL = "°F"
 SENSOR_UNIT_TEMPERATURE_METRIC = "°C"
-# Corrected unit for Volumetric Water Content
 SENSOR_UNIT_MOISTURE = "m³/m³"
 
 # Data Keys from API
