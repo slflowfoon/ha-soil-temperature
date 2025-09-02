@@ -1,4 +1,3 @@
-"""Config flow for Soil Temperature integration."""
 import logging
 import voluptuous as vol
 import aiohttp
@@ -22,18 +21,15 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class SoilTemperatureConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Soil Temperature."""
 
     VERSION = 1
 
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
-        """Get the options flow for this handler."""
         return SoilTemperatureOptionsFlowHandler(config_entry)
 
     async def async_step_user(self, user_input=None):
-        """Handle the initial step."""
         errors = {}
 
         if user_input is not None:
@@ -43,8 +39,7 @@ class SoilTemperatureConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             lat = user_input[CONF_LATITUDE]
             lng = user_input[CONF_LONGITUDE]
             
-            # Set a default title in case the geocode API fails
-            title = f"Soil Temperature ({lat}, {lng})"
+            title = f"Soil Temperature ({city})"
 
             try:
                 session = async_get_clientsession(self.hass)
@@ -84,14 +79,11 @@ class SoilTemperatureConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class SoilTemperatureOptionsFlowHandler(config_entries.OptionsFlow):
-    """Handle an options flow for Soil Temperature."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry):
-        """Initialize options flow."""
         self.config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
-        """Manage the options."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
